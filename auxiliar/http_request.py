@@ -20,7 +20,7 @@ class Decorators(object):
 class HttpRequest(object):
 
 	def __init__(self, domain, auth_endpoint="", username="", password="",
-				 auth_data="", authentication_option="None"):
+				 auth_data="", authentication_option="None", token_key="token", expire=3600, session=requests.Session()):
 
 		self.authentication_options = {
 			"None": {
@@ -29,7 +29,8 @@ class HttpRequest(object):
 			},
 			"Bearer": {
 				"refresh": True,
-				"authentication_method": self._bearer_auth
+				"authentication_method": self._bearer_auth,
+				"token_key": token_key
 			}
 		}
 		self.authentication_option = self.authentication_options[authentication_option]
@@ -38,24 +39,27 @@ class HttpRequest(object):
 		self.domain = domain
 		self.auth_endpoint = auth_endpoint
 		self.auth_data = auth_data
+		self.expire = expire
 
-		self.session = requests.Session()
+		self.session = session
+		self.prep = requests.Request("GET", self.domain).prepare()
 		self.authentication_option['authentication_method']()
 
 	def _no_auth(self):
-		self.prep = requests.Request('GET', self.domain).prepare()
+		# self.prep = requests.Request('GET', self.domain).prepare()
+		pass
 
-	def _bearer_auth(self, expire=3600):
+	def _bearer_auth(self):
 
 		url = urljoin(self.domain, self.auth_endpoint)
 		r = self.session.post(url, json=self.auth_data)
 
-		self.token = r.json()['token']
-		self.access_token_expiration = time.time() + expire
+		self.token = r.json()[self.authentication_option["token_key"]]
+		self.access_token_expiration = time.time() + self.expire
 
 		logging.debug('Got token {}'.format(self.token))
 
-		self.prep = requests.Request("GET", self.domain).prepare()
+		# self.prep = requests.Request("GET", self.domain).prepare()
 		self.prep.headers = {"Authorization": "Bearer {}".format(self.token)}
 
 	@Decorators.refresh_token
