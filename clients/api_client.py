@@ -1,6 +1,19 @@
 from mixings.mixing import LoggerMixin
 from auxiliar.http_request import HttpRequest
 
+
+def unrestricted(action):
+	def decorator_func(func):
+		def wrapper_func(*args, **kwargs):
+			client_object = args[0]
+			client_object.authentication_option['refresh'] = False
+			r = func(*args, **kwargs)
+			# print('In wrapper_func, handling action after wrapped function returned {!r}'.format(r))
+			client_object.authentication_option['refresh'] = True
+			return r
+		return wrapper_func
+	return decorator_func
+
 class NoAuthApiClient(LoggerMixin, HttpRequest):
 
 	def __init__(self, dominio):
@@ -26,16 +39,11 @@ class BearerAuthApiClient(LoggerMixin, HttpRequest):
 		super(BearerAuthApiClient, self).__init__(self.domain, self.auth_endpoint, username, password,
 											self.auth_data, expire=2, authentication_option=auth_option)
 
+	@unrestricted('s')
 	def unrestricted_endpoint(self):
-
 		endpoint = '/no-auth'
 		self.logger.info('{} endpoint'.format(endpoint))
-
-		self.authentication_option['refresh'] = False
-		r = self._http_request('GET', '{}'.format(endpoint))
-		self.authentication_option['refresh'] = True
-
-		return r
+		return self._http_request('GET', '{}'.format(endpoint))
 
 	def restricted_endpoint(self):
 		endpoint = '/users'
