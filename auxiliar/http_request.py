@@ -3,19 +3,7 @@ import logging
 import requests
 from urllib.parse import urljoin
 
-
-class Decorators(object):
-	@staticmethod
-	def refresh_token(decorated):
-		def wrapper(*args, **kwargs):
-			client_object = args[0]
-			if client_object.authentication_option['refresh'] == True:
-				if time.time() > client_object.access_token_expiration:
-					logging.info("Refreshing authentication ...")
-					client_object.access_token_expiration, client_object.prep = client_object.authentication_function()
-			return decorated(*args, **kwargs)
-		return wrapper
-
+from utils.decorators import Decorator
 
 class HttpRequest(object):
 
@@ -70,7 +58,7 @@ class HttpRequest(object):
 
 		return access_token_expiration, prep
 
-	@Decorators.refresh_token
+	@Decorator.refresh_token
 	def _http_request(self, method='GET', endpoint="", json_data={}):
 
 		self.prep.method = method
