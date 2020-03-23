@@ -1,5 +1,7 @@
-from mixings.mixing import LoggerMixin
+from utils.mixing import LoggerMixin
+from utils.decorators import Decorator
 from auxiliar.http_request import HttpRequest
+
 
 class NoAuthApiClient(LoggerMixin, HttpRequest):
 
@@ -26,16 +28,11 @@ class BearerAuthApiClient(LoggerMixin, HttpRequest):
 		super(BearerAuthApiClient, self).__init__(self.domain, self.auth_endpoint, username, password,
 											self.auth_data, expire=2, authentication_option=auth_option)
 
+	@Decorator.unrestricted()
 	def unrestricted_endpoint(self):
-
 		endpoint = '/no-auth'
 		self.logger.info('{} endpoint'.format(endpoint))
-
-		self.authentication_option['refresh'] = False
-		r = self._http_request('GET', '{}'.format(endpoint))
-		self.authentication_option['refresh'] = True
-
-		return r
+		return self._http_request('GET', '{}'.format(endpoint))
 
 	def restricted_endpoint(self):
 		endpoint = '/users'
