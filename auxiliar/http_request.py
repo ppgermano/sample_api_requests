@@ -59,11 +59,13 @@ class HttpRequest(object):
 		return access_token_expiration, prep
 
 	@Decorator.refresh_token
-	def _http_request(self, method='GET', endpoint="", json_data={}):
+	def _http_request(self, method='GET', endpoint="", params={}, json_data={}):
 
 		self.prep.method = method
-		self.prep.url = urljoin(
-			self.domain, endpoint) if endpoint else self.domain
+
+		url = urljoin(self.domain, endpoint) if endpoint else self.domain
+
+		self.prep.prepare_url(url, params)
 
 		if json_data:
 			self.prep.prepare_body(data=json_data, files=None, json=True)
